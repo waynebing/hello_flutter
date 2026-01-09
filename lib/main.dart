@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 
 /* 
   
-  路由管理-传递参数
-
-  ●作用:通过路由传递参数是实现页面间数据通信的常用方式
-  ●传递参数(命名路由):Navigator.pushNamed(context,地址，arguments:{参数})
-  ●接收参数(命名路由):ModalRoute.of(context)?.settings.arguments
-  ●接收时机:initState获取不到路由参数，放置在Future.microtask(异步微任务)中
+  路由管理-动态路由与高级控制
+  ●场景:更复杂的场景，如需根据参数动态生成页面，或实现路由拦截，可以使用onGenerateRoute和onUnknownRoute
+  ●onGenerateRoute:允许你根据 RouteSettings(包含路由名称和参数)动态创建不同的 Route
+  ●onUnknownRoute:跳转一个未在路由表中注册、也未在 onGenerateRoute中处理的路由，会调用此回调。通常用于处理404错误页面。
 
  */
-void main(List<String> args) {
+
+void main() {
   runApp(MainPage());
 }
 
@@ -19,99 +18,97 @@ class MainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //注册路由表
     return MaterialApp(
-      initialRoute: "/list",
+      initialRoute: "/goodsList",
       routes: {
-        "/list": (context) => ListPage(),
-        "/detail": (context) => DetailPage(),
+        "/goodsList": (context) => GoodsListPage(),
       },
-      home: ListPage(),
+      onGenerateRoute: (settings) {
+        if (settings.name == '/cartList') {
+          bool isLogin = false;
+          if (isLogin) {
+            return MaterialPageRoute(builder: (context) => CartList());
+          } else {
+            return MaterialPageRoute(builder: (context) => LoginPage());
+          }
+        }
+        return null;
+      },
+      onUnknownRoute: (settings) =>
+          MaterialPageRoute(builder: (context) => NotFoundPage()),
     );
   }
 }
 
-//列表页
-class ListPage extends StatefulWidget {
-  ListPage({Key? key}) : super(key: key);
+//商品列表
+class GoodsListPage extends StatefulWidget {
+  GoodsListPage({Key? key}) : super(key: key);
 
   @override
-  _ListPageState createState() => _ListPageState();
+  _GoodsListPageState createState() => _GoodsListPageState();
 }
 
-class _ListPageState extends State<ListPage> {
+class _GoodsListPageState extends State<GoodsListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('列表页')),
-      body: ListView.builder(
-        padding: EdgeInsets.all(10),
-        itemBuilder: (BuildContext context, int index) {
-          return GestureDetector(
-            onTap: () {
-              //跳转到详情页
-              Navigator.pushNamed(context, "/detail",
-                  arguments: {"id": index + 1});
-            },
-            child: Container(
-              margin: EdgeInsets.only(top: 10),
-              height: 100,
-              color: Colors.blue,
-              alignment: Alignment.center,
-              child: Text(
-                '我是第${index + 1}个',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
-          );
-        },
-        itemCount: 100,
-      ),
-    );
+        appBar: AppBar(title: Text('商品列表')),
+        body: Center(
+          child: TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, "/cartList");
+              },
+              child: Text('加入购物车')),
+        ));
   }
 }
 
-//详情页
-class DetailPage extends StatefulWidget {
-  DetailPage({Key? key}) : super(key: key);
+//购物车列表
+class CartList extends StatefulWidget {
+  CartList({Key? key}) : super(key: key);
 
   @override
-  _DetailPageState createState() => _DetailPageState();
+  _CartListState createState() => _CartListState();
 }
 
-class _DetailPageState extends State<DetailPage> {
-  initState() {
-    super.initState();
-    Future.microtask(() {
-      if (ModalRoute.of(context)?.settings.arguments != null) {
-        Map<String, dynamic> params =
-            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
-        // print(ModalRoute.of(context)?.settings.arguments);
-      }
-    });
-  }
-
+class _CartListState extends State<CartList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('详情页')),
-      body: Center(
-          child: Column(
-        children: [
-          TextButton(
-              onPressed: () {
-                //返回到列表页
-                Navigator.pop(context);
-              },
-              child: Text('返回上一个页面')),
-          TextButton(
-              onPressed: () {
-                //返回到列表页
-                Navigator.pushNamed(context, "/list");
-              },
-              child: Text('去列表页')),
-        ],
-      )),
+        appBar: AppBar(title: Text('购物车列表')),
+        body: Center(
+          child: TextButton(onPressed: () {}, child: Text('去支付')),
+        ));
+  }
+}
+
+//登陆页面
+class LoginPage extends StatefulWidget {
+  LoginPage({Key? key}) : super(key: key);
+
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(title: Text('登陆页面')),
+        body: Center(
+          child: TextButton(onPressed: () {}, child: Text('去登陆')),
+        ));
+  }
+}
+
+//404页面
+class NotFoundPage extends StatelessWidget {
+  const NotFoundPage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Center(child: Text('404页面')),
     );
   }
 }
